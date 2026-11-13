@@ -16,7 +16,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_android/shared_preferences_android.dart';
 import 'package:traccar_manager/error_screen.dart';
-import 'package:traccar_manager/main.dart';
 import 'package:traccar_manager/token_store.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -38,6 +37,7 @@ class _MainScreenState extends State<MainScreen> {
   StreamSubscription<Uri>? _appLinksSubscription;
   final _loginTokenStore = TokenStore();
   final _messaging = FirebaseMessaging.instance;
+  String? _lastNotificationToken;
   InAppWebViewController? _controller;
   String? _loadingError;
   late String _initialUrl;
@@ -102,7 +102,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   String _getUrl() {
-    final url = _preferences.getString(_urlKey) ?? 'https://demo.traccar.org';
+    final url = _preferences.getString(_urlKey) ?? 'https://tracker.com.ec';
     return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
 
@@ -168,33 +168,89 @@ class _MainScreenState extends State<MainScreen> {
     _maybeCompleteInitialized();
   }
 
+  Future<void> _sendNotificationToken(String token) async {
+    _lastNotificationToken = token;
+    developer.log('[Firebase FCM] 🔔 Token FCM generado: $token');
+    debugPrint('[Firebase FCM] 🔔 Token FCM generado: $token');
+    if (_controller != null) {
+      await _controller?.evaluateJavascript(
+        source: "window.updateNotificationToken?.('$token');",
+      );
+      developer.log('[Firebase FCM] 📤 Token inyectado en window.updateNotificationToken');
+      debugPrint('[Firebase FCM] 📤 Token inyectado en window.updateNotificationToken');
+    }
+  }
+
   Future<void> _initNotifications() async {
     await _initialized.future;
+
     _messaging.onRegistered.listen((installationId) {
-      _controller?.evaluateJavascript(source: "window.updateNotificationToken?.('$installationId')");
+      developer.log('[Firebase FCM] onRegistered emitido: $installationId');
+      debugPrint('[Firebase FCM] onRegistered emitido: $installationId');
+      _sendNotificationToken(installationId);
     });
+
+    // ignore: deprecated_member_use
+    _messaging.onTokenRefresh.listen((token) {
+      developer.log('[Firebase FCM] onTokenRefresh emitido: $token');
+      debugPrint('[Firebase FCM] onTokenRefresh emitido: $token');
+      _sendNotificationToken(token);
+    });
+
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      developer.log('[Firebase FCM] Notificación abierta desde background: ${message.data}');
+      debugPrint('[Firebase FCM] Notificación abierta desde background: ${message.data}');
       final eventId = message.data['eventId'];
       if (eventId != null) {
         _loadUrl(Uri.parse('${_getUrl()}/event/$eventId'));
       }
     });
+
     try {
-      await _messaging.requestPermission();
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      developer.log('[Firebase FCM] Estado de permiso: ${settings.authorizationStatus}');
+      debugPrint('[Firebase FCM] Estado de permiso: ${settings.authorizationStatus}');
     } catch (e) {
-      developer.log('Failed to request notification permission', error: e);
+      developer.log('[Firebase FCM] Error solicitando permisos: $e', error: e);
+      debugPrint('[Firebase FCM] Error solicitando permisos: $e');
     }
+
+    try {
+      // ignore: deprecated_member_use
+      final token = await _messaging.getToken();
+      developer.log('[Firebase FCM] 🔔 getToken() inicial: $token');
+      debugPrint('[Firebase FCM] 🔔 getToken() inicial: $token');
+      if (token != null) {
+        _sendNotificationToken(token);
+      }
+    } catch (e) {
+      if (Platform.isIOS && e.toString().contains('apns-token-not-set')) {
+        developer.log('[Firebase FCM] ℹ️ iOS Simulator no soporta tokens APNs de Apple. Requiere dispositivo físico.');
+        debugPrint('[Firebase FCM] ℹ️ iOS Simulator no soporta tokens APNs de Apple. Requiere dispositivo físico.');
+      } else {
+        developer.log('[Firebase FCM] Error en getToken(): $e', error: e);
+        debugPrint('[Firebase FCM] Error en getToken(): $e');
+      }
+    }
+
     await _authenticated.future.timeout(const Duration(seconds: 30), onTimeout: () {});
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      developer.log('[Firebase FCM] 📩 Notificación en primer plano recibida: ${message.notification?.title} - ${message.notification?.body}');
+      debugPrint('[Firebase FCM] 📩 Notificación en primer plano recibida: ${message.notification?.title} - ${message.notification?.body}');
       final notification = message.notification;
       if (notification != null) {
         _controller?.evaluateJavascript(source: "handleNativeNotification?.(${jsonEncode(message.toMap())})");
-        messengerKey.currentState?.showSnackBar(SnackBar(content: Text(notification.body ?? 'Unknown')));
       }
     });
   }
 
   void _handleWebMessage(String message) async {
+    developer.log('[WebView -> App] Mensaje recibido: $message');
+    debugPrint('[WebView -> App] Mensaje recibido: $message');
     final List<String> parts = message.split('|');
     switch (parts[0]) {
       case 'login':
@@ -202,10 +258,10 @@ class _MainScreenState extends State<MainScreen> {
           await _loginTokenStore.save(parts[1]);
         }
         try {
-          await _messaging.register();
-        } catch (e) {
-          developer.log('Failed to register for notifications', error: e);
-        }
+          // ignore: deprecated_member_use
+          final token = await _messaging.getToken();
+          if (token != null) _sendNotificationToken(token);
+        } catch (_) {}
       case 'authentication':
         final loginToken = await _loginTokenStore.read(true);
         if (loginToken != null) {
@@ -214,10 +270,10 @@ class _MainScreenState extends State<MainScreen> {
       case 'authenticated':
         if (!_authenticated.isCompleted) _authenticated.complete();
         try {
-          await _messaging.register();
-        } catch (e) {
-          developer.log('Failed to register for notifications', error: e);
-        }
+          // ignore: deprecated_member_use
+          final token = await _messaging.getToken();
+          if (token != null) _sendNotificationToken(token);
+        } catch (_) {}
       case 'logout':
         await _loginTokenStore.delete();
       case 'download':
@@ -232,6 +288,20 @@ class _MainScreenState extends State<MainScreen> {
         await _preferences.setString(_urlKey, url);
         await _loadUrl(Uri.parse(url));
     }
+  }
+
+  bool _isSameOrSubdomain(String host, String baseHost) {
+    if (host.isEmpty || baseHost.isEmpty) return false;
+    if (host == baseHost) return true;
+    if (host.endsWith('.$baseHost')) return true;
+    final baseParts = baseHost.split('.');
+    if (baseParts.length >= 2) {
+      final rootDomain = baseParts.sublist(baseParts.length - 2).join('.');
+      if (host == rootDomain || host.endsWith('.$rootDomain')) {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool _isRootOrLogin(String baseUrl, String? currentUrl) {
@@ -351,6 +421,17 @@ class _MainScreenState extends State<MainScreen> {
             onLoadStart: (controller, url) {
               setState(() => _loadingError = null);
             },
+            onLoadStop: (controller, url) async {
+              developer.log('[WebView] onLoadStop: $url');
+              debugPrint('[WebView] onLoadStop: $url');
+              if (_lastNotificationToken != null) {
+                developer.log('[Firebase FCM] Inyectando token en onLoadStop: $_lastNotificationToken');
+                debugPrint('[Firebase FCM] Inyectando token en onLoadStop: $_lastNotificationToken');
+                await controller.evaluateJavascript(
+                  source: "window.updateNotificationToken?.('$_lastNotificationToken');",
+                );
+              }
+            },
             shouldOverrideUrlLoading: (controller, navigationAction) async {
               final target = navigationAction.request.url;
               if (target == null) {
@@ -361,7 +442,13 @@ class _MainScreenState extends State<MainScreen> {
                 _launchAuthorizeRequest(uri);
                 return NavigationActionPolicy.CANCEL;
               }
-              if (uri.authority != Uri.parse(_getUrl()).authority) {
+              if (navigationAction.isForMainFrame == false) {
+                return NavigationActionPolicy.ALLOW;
+              }
+              final baseUri = Uri.parse(_getUrl());
+              if (!_isSameOrSubdomain(uri.host, baseUri.host)) {
+                developer.log('[WebView] URL externa ($uri), abriendo en navegador del sistema');
+                debugPrint('[WebView] URL externa ($uri), abriendo en navegador del sistema');
                 try {
                   launchUrl(uri, mode: LaunchMode.externalApplication);
                 } catch (e) {

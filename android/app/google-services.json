@@ -1,35 +1,64 @@
 {
   "project_info": {
-    "project_number": "847296525014",
-    "firebase_url": "https://traccar-manager-app.firebaseio.com",
-    "project_id": "traccar-manager-app",
-    "storage_bucket": "traccar-manager-app.appspot.com"
+    "project_number": "580037917082",
+    "project_id": "tracker-2ccd1",
+    "storage_bucket": "tracker-2ccd1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:847296525014:android:ddfd572332cea794",
+        "mobilesdk_app_id": "1:580037917082:android:864d1e0b172406f6d0e223",
         "android_client_info": {
-          "package_name": "org.traccar.manager"
+          "package_name": "ec.com.motoriagps"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAAg2esrXqGG-_6TkPvpIfc3RlC2xFOysA"
+          "current_key": "AIzaSyCf63pW5grMUZnYlBLcnyzg1A1vH6Ax8kE"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "847296525014-8d6vg8a08lfk1mp8j6mbgv96gq3n7cob.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "org.traccar.TraccarManager"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580037917082:android:42c74acd9ac59354d0e223",
+        "android_client_info": {
+          "package_name": "ec.com.trackerx"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCf63pW5grMUZnYlBLcnyzg1A1vH6Ax8kE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580037917082:android:59b859a15f4b8a2fd0e223",
+        "android_client_info": {
+          "package_name": "org.munditrack.manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCf63pW5grMUZnYlBLcnyzg1A1vH6Ax8kE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
         }
       }
     }

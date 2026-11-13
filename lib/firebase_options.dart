@@ -50,23 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAAg2esrXqGG-_6TkPvpIfc3RlC2xFOysA',
-    appId: '1:847296525014:android:ddfd572332cea794',
-    messagingSenderId: '847296525014',
-    projectId: 'traccar-manager-app',
-    databaseURL: 'https://traccar-manager-app.firebaseio.com',
-    storageBucket: 'traccar-manager-app.appspot.com',
+    apiKey: 'AIzaSyCf63pW5grMUZnYlBLcnyzg1A1vH6Ax8kE',
+    appId: '1:580037917082:android:59b859a15f4b8a2fd0e223',
+    messagingSenderId: '580037917082',
+    projectId: 'tracker-2ccd1',
+    storageBucket: 'tracker-2ccd1.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCa-dBF6DlD3CtKODjgrpoUjEwESsMttj8',
-    appId: '1:847296525014:ios:a9ee9ddfdb62f027',
-    messagingSenderId: '847296525014',
-    projectId: 'traccar-manager-app',
-    databaseURL: 'https://traccar-manager-app.firebaseio.com',
-    storageBucket: 'traccar-manager-app.appspot.com',
-    iosClientId: '847296525014-8d6vg8a08lfk1mp8j6mbgv96gq3n7cob.apps.googleusercontent.com',
-    iosBundleId: 'org.traccar.TraccarManager',
+    apiKey: 'AIzaSyB7e2ZetzXdrwsglMhLhtcowo_7ygSzzI0',
+    appId: '1:580037917082:ios:0b5c5487009ee7cbd0e223',
+    messagingSenderId: '580037917082',
+    projectId: 'tracker-2ccd1',
+    storageBucket: 'tracker-2ccd1.firebasestorage.app',
+    iosBundleId: 'ec.com.tracker.trackerXv2',
   );
 
 }
